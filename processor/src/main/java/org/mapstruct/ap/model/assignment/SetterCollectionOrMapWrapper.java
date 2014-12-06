@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.mapstruct.ap.model.common.Type;
+import org.mapstruct.spi.AccessorNamingStrategy;
 
 /**
  * This wrapper handles the situation were an assignment is done via the setter.
@@ -42,9 +43,10 @@ public class SetterCollectionOrMapWrapper extends AssignmentWrapper {
 
     public SetterCollectionOrMapWrapper(Assignment decoratedAssignment,
                                         String targetSetterName,
-                                        Assignment newCollectionOrMapAssignment) {
+                                        Assignment newCollectionOrMapAssignment,
+                                        AccessorNamingStrategy accessorNamingStrategy) {
         super( decoratedAssignment );
-        this.targetGetterName = "get" + targetSetterName.substring( 3 );
+        this.targetGetterName = accessorNamingStrategy.getNonBooleanGetterNameForSetterName( targetSetterName );
         this.newCollectionOrMapAssignment = newCollectionOrMapAssignment;
     }
 

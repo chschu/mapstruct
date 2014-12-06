@@ -39,6 +39,7 @@ import org.mapstruct.ap.model.common.TypeFactory;
 import org.mapstruct.ap.prism.MappingPrism;
 import org.mapstruct.ap.prism.MappingsPrism;
 import org.mapstruct.ap.util.Executables;
+import org.mapstruct.spi.AccessorNamingStrategy;
 
 /**
  * Represents a property mapping as configured via {@code @Mapping}.
@@ -190,7 +191,8 @@ public class Mapping {
             ( (DeclaredType) mirror ).asElement().getKind() == ElementKind.ENUM;
     }
 
-    public void init(SourceMethod method, Messager messager, TypeFactory typeFactory) {
+    public void init(SourceMethod method, Messager messager, TypeFactory typeFactory,
+                     AccessorNamingStrategy accessorNamingStrategy) {
 
         if ( !method.isEnumMapping() ) {
             sourceReference = new SourceReference.BuilderFromMapping()
@@ -198,6 +200,7 @@ public class Mapping {
                 .method( method )
                 .messager( messager )
                 .typeFactory( typeFactory )
+                .accessorNamingStrategy( accessorNamingStrategy )
                 .build();
         }
     }
@@ -252,15 +255,17 @@ public class Mapping {
         return sourceReference;
     }
 
-    private boolean hasPropertyInReverseMethod(String name, SourceMethod method) {
-        for ( ExecutableElement getter : method.getResultType().getGetters() ) {
-            if ( Executables.getPropertyName( getter ).equals( name ) ) {
+    private boolean hasPropertyInReverseMethod(String name, SourceMethod method,
+                                               AccessorNamingStrategy accessorNamingStrategy) {
+        for ( ExecutableElement getter : method.getResultType().getGetters( accessorNamingStrategy ) ) {
+            if ( Executables.getPropertyName( getter, accessorNamingStrategy ).equals( name ) ) {
                 return true;
             }
         }
 
-        for ( ExecutableElement getter : method.getResultType().getAlternativeTargetAccessors() ) {
-            if ( Executables.getPropertyName( getter ).equals( name ) ) {
+        for ( ExecutableElement getter : method.getResultType()
+                        .getAlternativeTargetAccessors( accessorNamingStrategy ) ) {
+            if ( Executables.getPropertyName( getter, accessorNamingStrategy ).equals( name ) ) {
                 return true;
             }
         }
@@ -268,7 +273,8 @@ public class Mapping {
         return false;
     }
 
-    public Mapping reverse(SourceMethod method, Messager messager, TypeFactory typeFactory) {
+    public Mapping reverse(SourceMethod method, Messager messager, TypeFactory typeFactory,
+                           AccessorNamingStrategy accessorNamingStrategy) {
 
         // mapping can only be reversed if the source was not a constant nor an expression nor a nested property
         if ( constant != null || javaExpression != null ) {
@@ -277,7 +283,7 @@ public class Mapping {
 
         // should only ignore a property when 1) there is a sourceName defined or 2) there's a name match
         if ( isIgnored ) {
-            if ( sourceName == null && !hasPropertyInReverseMethod( targetName, method ) ) {
+            if ( sourceName == null && !hasPropertyInReverseMethod( targetName, method, accessorNamingStrategy ) ) {
                 return null;
             }
         }
@@ -312,7 +318,7 @@ public class Mapping {
             targetAnnotationValue
         );
 
-        reverse.init( method, messager, typeFactory );
+        reverse.init( method, messager, typeFactory, accessorNamingStrategy );
         return reverse;
     }
 

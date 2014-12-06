@@ -112,4 +112,13 @@ public @interface Mapper {
      * @return The strategy to be applied when {@code null} is passed as source value to the methods of this mapper.
      */
     NullValueMappingStrategy nullValueMappingStrategy() default NullValueMappingStrategy.DEFAULT;
+
+    /**
+     * The name of the {@link org.mapstruct.spi.AccessorNamingStrategy} implementation to be used. This value must match
+     * the value defined by the {@link org.mapstruct.spi.Name} annotation on the implementation. A JavaBeans-compliant
+     * implementation will be used by default.
+     *
+     * @return The name identifying the {@link org.mapstruct.spi.AccessorNamingStrategy} implementation.
+     */
+    String accessorNamingStrategy() default "";
 }

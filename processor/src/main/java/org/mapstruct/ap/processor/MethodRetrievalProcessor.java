@@ -42,10 +42,13 @@ import org.mapstruct.ap.model.source.Mapping;
 import org.mapstruct.ap.model.source.SourceMethod;
 import org.mapstruct.ap.prism.IterableMappingPrism;
 import org.mapstruct.ap.prism.MapMappingPrism;
+import org.mapstruct.ap.prism.MapperPrism;
 import org.mapstruct.ap.prism.MappingPrism;
 import org.mapstruct.ap.prism.MappingsPrism;
 import org.mapstruct.ap.util.AnnotationProcessingException;
 import org.mapstruct.ap.util.MapperConfig;
+import org.mapstruct.ap.util.Services;
+import org.mapstruct.spi.AccessorNamingStrategy;
 
 import static org.mapstruct.ap.util.Executables.getAllEnclosedExecutableElements;
 
@@ -63,6 +66,7 @@ public class MethodRetrievalProcessor implements ModelElementProcessor<Void, Lis
     private TypeFactory typeFactory;
     private Types typeUtils;
     private Elements elementUtils;
+    private AccessorNamingStrategy accessorNamingStrategy;
 
     @Override
     public List<SourceMethod> process(ProcessorContext context, TypeElement mapperTypeElement, Void sourceModel) {
@@ -70,6 +74,9 @@ public class MethodRetrievalProcessor implements ModelElementProcessor<Void, Lis
         this.typeFactory = context.getTypeFactory();
         this.typeUtils = context.getTypeUtils();
         this.elementUtils = context.getElementUtils();
+        this.accessorNamingStrategy =
+            Services.get( AccessorNamingStrategy.class, MapperPrism.getInstanceOn( mapperTypeElement )
+                                                                   .accessorNamingStrategy() );
         return retrieveMethods( mapperTypeElement, mapperTypeElement );
     }
 
@@ -169,7 +176,8 @@ public class MethodRetrievalProcessor implements ModelElementProcessor<Void, Lis
             MapMapping.fromPrism( MapMappingPrism.getInstanceOn( method ) ),
             typeUtils,
             messager,
-            typeFactory
+            typeFactory,
+            accessorNamingStrategy
         );
     }
 
@@ -190,7 +198,8 @@ public class MethodRetrievalProcessor implements ModelElementProcessor<Void, Lis
             parameters,
             returnType,
             exceptionTypes,
-            typeUtils
+            typeUtils,
+            accessorNamingStrategy
         );
     }
 

@@ -35,6 +35,7 @@ import org.mapstruct.ap.model.common.Type;
 import org.mapstruct.ap.model.common.TypeFactory;
 import org.mapstruct.ap.model.source.SourceReference.PropertyEntry;
 import org.mapstruct.ap.util.Strings;
+import org.mapstruct.spi.AccessorNamingStrategy;
 
 /**
  * Represents a mapping method with source and target type and the mappings between the properties of source and target
@@ -63,7 +64,9 @@ public class SourceMethod implements Method {
     private Map<String, List<Mapping>> mappings;
     private IterableMapping iterableMapping;
     private MapMapping mapMapping;
+    private AccessorNamingStrategy accessorNamingStrategy;
 
+    // CHECKSTYLE:OFF
     public static SourceMethod forMethodRequiringImplementation(ExecutableElement executable,
                                                                 List<Parameter> parameters,
                                                                 Type returnType,
@@ -72,7 +75,9 @@ public class SourceMethod implements Method {
                                                                 IterableMapping iterableMapping, MapMapping mapMapping,
                                                                 Types typeUtils,
                                                                 Messager messager,
-                                                                TypeFactory typeFactory) {
+                                                                TypeFactory typeFactory,
+                                                                AccessorNamingStrategy accessorNamingStrategy) {
+        // CHECKSTYLE:ON
 
         SourceMethod sourceMethod = new SourceMethod(
             null,
@@ -85,12 +90,13 @@ public class SourceMethod implements Method {
             mapMapping,
             typeUtils,
             typeFactory,
-            messager
+            messager,
+            accessorNamingStrategy
         );
 
         for ( Map.Entry<String, List<Mapping>> entry : sourceMethod.getMappings().entrySet() ) {
             for ( Mapping mapping : entry.getValue() ) {
-                mapping.init( sourceMethod, messager, typeFactory );
+                mapping.init( sourceMethod, messager, typeFactory, accessorNamingStrategy );
             }
         }
         return sourceMethod;
@@ -98,7 +104,8 @@ public class SourceMethod implements Method {
 
     public static SourceMethod forReferencedMethod(Type declaringMapper, ExecutableElement executable,
                                                    List<Parameter> parameters, Type returnType,
-                                                   List<Type> exceptionTypes, Types typeUtils) {
+                                                   List<Type> exceptionTypes, Types typeUtils,
+                                                   AccessorNamingStrategy accessorNamingStrategy) {
 
         return new SourceMethod(
             declaringMapper,
@@ -111,12 +118,14 @@ public class SourceMethod implements Method {
             null,
             typeUtils,
             null,
-            null
+            null,
+            accessorNamingStrategy
         );
     }
 
     public static SourceMethod forFactoryMethod(Type declaringMapper, ExecutableElement executable, Type returnType,
-                                                List<Type> exceptionTypes, Types typeUtils) {
+                                                List<Type> exceptionTypes, Types typeUtils,
+                                                AccessorNamingStrategy accessorNamingStrategy) {
 
         return new SourceMethod(
             declaringMapper,
@@ -129,7 +138,8 @@ public class SourceMethod implements Method {
             null,
             typeUtils,
             null,
-            null
+            null,
+            accessorNamingStrategy
         );
     }
 
@@ -137,7 +147,7 @@ public class SourceMethod implements Method {
     private SourceMethod(Type declaringMapper, ExecutableElement executable, List<Parameter> parameters,
                          Type returnType, List<Type> exceptionTypes, Map<String, List<Mapping>> mappings,
                          IterableMapping iterableMapping, MapMapping mapMapping, Types typeUtils,
-                         TypeFactory typeFactory, Messager messager) {
+                         TypeFactory typeFactory, Messager messager, AccessorNamingStrategy accessorNamingStrategy) {
         this.declaringMapper = declaringMapper;
         this.executable = executable;
         this.parameters = parameters;
@@ -153,6 +163,7 @@ public class SourceMethod implements Method {
         this.typeUtils = typeUtils;
         this.typeFactory = typeFactory;
         this.messager = messager;
+        this.accessorNamingStrategy = accessorNamingStrategy;
     }
     //CHECKSTYLE:ON
 
@@ -412,7 +423,7 @@ public class SourceMethod implements Method {
         if ( inverseMethod != null && !inverseMethod.getMappings().isEmpty() ) {
             for ( List<Mapping> mappings : inverseMethod.getMappings().values() ) {
                 for ( Mapping inverseMapping : mappings ) {
-                    Mapping reversed = inverseMapping.reverse( this, messager, typeFactory );
+                    Mapping reversed = inverseMapping.reverse( this, messager, typeFactory, accessorNamingStrategy );
                     if ( reversed != null ) {
                         List<Mapping> mappingsOfProperty = newMappings.get( reversed.getTargetName() );
                         if ( mappingsOfProperty == null ) {

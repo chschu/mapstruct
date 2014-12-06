@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -54,7 +55,9 @@ import org.mapstruct.ap.prism.InheritInverseConfigurationPrism;
 import org.mapstruct.ap.prism.MapperPrism;
 import org.mapstruct.ap.processor.creation.MappingResolverImpl;
 import org.mapstruct.ap.util.MapperConfig;
+import org.mapstruct.ap.util.Services;
 import org.mapstruct.ap.util.Strings;
+import org.mapstruct.spi.AccessorNamingStrategy;
 
 /**
  * A {@link ModelElementProcessor} which creates a {@link Mapper} from the given
@@ -80,6 +83,9 @@ public class MapperCreationProcessor implements ModelElementProcessor<List<Sourc
         this.typeFactory = context.getTypeFactory();
 
         List<MapperReference> mapperReferences = initReferencedMappers( mapperTypeElement );
+        AccessorNamingStrategy accessorNamingStrategy =
+            Services.get( AccessorNamingStrategy.class, MapperPrism.getInstanceOn( mapperTypeElement )
+                                                                   .accessorNamingStrategy() );
 
         MappingBuilderContext ctx = new MappingBuilderContext(
             typeFactory,
@@ -97,7 +103,8 @@ public class MapperCreationProcessor implements ModelElementProcessor<List<Sourc
             ),
             mapperTypeElement,
             sourceModel,
-            mapperReferences
+            mapperReferences,
+            accessorNamingStrategy
         );
         this.mappingContext = ctx;
         return getMapper( mapperTypeElement, sourceModel );

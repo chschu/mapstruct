@@ -34,6 +34,7 @@ import org.mapstruct.ap.model.common.TypeFactory;
 import org.mapstruct.ap.model.source.Method;
 import org.mapstruct.ap.model.source.SourceMethod;
 import org.mapstruct.ap.option.Options;
+import org.mapstruct.spi.AccessorNamingStrategy;
 
 /**
  * This class provides the context for the builders.
@@ -107,6 +108,7 @@ public class MappingBuilderContext {
     private final List<MapperReference> mapperReferences;
     private final MappingResolver mappingResolver;
     private final List<MappingMethod> mappingsToGenerate = new ArrayList<MappingMethod>();
+    private final AccessorNamingStrategy accessorNamingStrategy;
 
     public MappingBuilderContext(TypeFactory typeFactory,
                           Elements elementUtils,
@@ -116,7 +118,8 @@ public class MappingBuilderContext {
                           MappingResolver mappingResolver,
                           TypeElement mapper,
                           List<SourceMethod> sourceModel,
-                          List<MapperReference> mapperReferences) {
+                          List<MapperReference> mapperReferences,
+                          AccessorNamingStrategy accessorNamingStrategy) {
         this.typeFactory = typeFactory;
         this.elementUtils = elementUtils;
         this.typeUtils = typeUtils;
@@ -126,6 +129,7 @@ public class MappingBuilderContext {
         this.mapperTypeElement = mapper;
         this.sourceModel = sourceModel;
         this.mapperReferences = mapperReferences;
+        this.accessorNamingStrategy = accessorNamingStrategy;
     }
 
     public TypeElement getMapperTypeElement() {
@@ -170,5 +174,9 @@ public class MappingBuilderContext {
 
     public Set<VirtualMappingMethod> getUsedVirtualMappings() {
         return mappingResolver.getUsedVirtualMappings();
+    }
+
+    public AccessorNamingStrategy getAccessorNamingStrategy() {
+        return accessorNamingStrategy;
     }
 }

@@ -41,6 +41,7 @@ import org.mapstruct.ap.util.Executables;
 import org.mapstruct.ap.util.Filters;
 import org.mapstruct.ap.util.Nouns;
 import org.mapstruct.ap.util.SpecificCompilerWorkarounds;
+import org.mapstruct.spi.AccessorNamingStrategy;;
 
 /**
  * Represents (a reference to) the type of a bean property, parameter etc. Types are managed per generated source file.
@@ -278,9 +279,10 @@ public class Type extends ModelElement implements Comparable<Type> {
      *
      * @return an unmodifiable list of all getters (including 'is' for booleans).
      */
-    public List<ExecutableElement> getGetters() {
+    public List<ExecutableElement> getGetters(AccessorNamingStrategy accessorNamingStrategy) {
         if ( getters == null ) {
-            getters = Collections.unmodifiableList( Filters.getterMethodsIn( getAllExecutables() ) );
+            getters =
+                Collections.unmodifiableList( Filters.getterMethodsIn( getAllExecutables(), accessorNamingStrategy ) );
         }
         return getters;
     }
@@ -307,10 +309,11 @@ public class Type extends ModelElement implements Comparable<Type> {
      *
      * @param collectionProperty property type (assumed collection) to find  the adder method for
      * @param pluralPropertyName the property name (assumed plural)
-     *
+     * @param accessorNamingStrategy the service provider defining property names
      * @return corresponding adder method for getter when present
      */
-    public ExecutableElement getAdderForType(Type collectionProperty, String pluralPropertyName) {
+    public ExecutableElement getAdderForType(Type collectionProperty, String pluralPropertyName,
+                                             AccessorNamingStrategy accessorNamingStrategy) {
 
         List<ExecutableElement> candidates = new ArrayList<ExecutableElement>();
         if ( collectionProperty.isCollectionType ) {
@@ -322,7 +325,7 @@ public class Type extends ModelElement implements Comparable<Type> {
                 // now, look for a method that
                 // 1) starts with add,
                 // 2) and has typeArg as one and only arg
-                List<ExecutableElement> adderList = getAdders();
+                List<ExecutableElement> adderList = getAdders( accessorNamingStrategy );
                 for ( ExecutableElement adder : adderList ) {
                     VariableElement arg = adder.getParameters().get( 0 );
                     if ( arg.asType().equals( typeArg ) ) {
@@ -339,7 +342,7 @@ public class Type extends ModelElement implements Comparable<Type> {
         }
         else {
             for ( ExecutableElement candidate : candidates ) {
-                String elementName = Executables.getElementNameForAdder( candidate );
+                String elementName = Executables.getElementNameForAdder( candidate, accessorNamingStrategy );
                 if ( elementName.equals( Nouns.singularize( pluralPropertyName ) ) ) {
                     return candidate;
                 }
@@ -354,9 +357,10 @@ public class Type extends ModelElement implements Comparable<Type> {
      *
      * @return an unmodifiable list of all setters
      */
-    public List<ExecutableElement> getSetters() {
+    public List<ExecutableElement> getSetters(AccessorNamingStrategy accessorNamingStrategy) {
         if ( setters == null ) {
-            setters = Collections.unmodifiableList( Filters.setterMethodsIn( getAllExecutables() ) );
+            setters =
+                Collections.unmodifiableList( Filters.setterMethodsIn( getAllExecutables(), accessorNamingStrategy ) );
         }
         return setters;
     }
@@ -369,9 +373,10 @@ public class Type extends ModelElement implements Comparable<Type> {
      *
      * @return an unmodifiable list of all adders
      */
-    private List<ExecutableElement> getAdders() {
+    private List<ExecutableElement> getAdders(AccessorNamingStrategy accessorNamingStrategy) {
         if ( adders == null ) {
-            adders = Collections.unmodifiableList( Filters.adderMethodsIn( getAllExecutables() ) );
+            adders =
+                Collections.unmodifiableList( Filters.adderMethodsIn( getAllExecutables(), accessorNamingStrategy ) );
         }
         return adders;
     }
@@ -385,19 +390,19 @@ public class Type extends ModelElement implements Comparable<Type> {
      *
      * @return an unmodifiable list of alternative target accessors.
      */
-    public List<ExecutableElement> getAlternativeTargetAccessors() {
+    public List<ExecutableElement> getAlternativeTargetAccessors(AccessorNamingStrategy accessorNamingStrategy) {
         if ( alternativeTargetAccessors == null ) {
 
             List<ExecutableElement> result = new ArrayList<ExecutableElement>();
-            List<ExecutableElement> setterMethods = getSetters();
-            List<ExecutableElement> getterMethods = getGetters();
+            List<ExecutableElement> setterMethods = getSetters( accessorNamingStrategy );
+            List<ExecutableElement> getterMethods = getGetters( accessorNamingStrategy );
 
             // there could be a getter method for a list/map that is not present as setter.
             // a getter could substitute the setter in that case and act as setter.
             // (assuming it is initialized)
             for ( ExecutableElement getterMethod : getterMethods ) {
                 if ( isCollectionOrMap( getterMethod ) &&
-                    !correspondingSetterMethodExists( getterMethod, setterMethods ) ) {
+                    !correspondingSetterMethodExists( getterMethod, setterMethods, accessorNamingStrategy ) ) {
                     result.add( getterMethod );
                 }
             }
@@ -408,11 +413,12 @@ public class Type extends ModelElement implements Comparable<Type> {
     }
 
     private boolean correspondingSetterMethodExists(ExecutableElement getterMethod,
-                                                    List<ExecutableElement> setterMethods) {
-        String getterPropertyName = Executables.getPropertyName( getterMethod );
+                                                    List<ExecutableElement> setterMethods,
+                                                    AccessorNamingStrategy accessorNamingStrategy) {
+        String getterPropertyName = Executables.getPropertyName( getterMethod, accessorNamingStrategy );
 
         for ( ExecutableElement setterMethod : setterMethods ) {
-            String setterPropertyName = Executables.getPropertyName( setterMethod );
+            String setterPropertyName = Executables.getPropertyName( setterMethod, accessorNamingStrategy );
             if ( getterPropertyName.equals( setterPropertyName ) ) {
                 return true;
             }

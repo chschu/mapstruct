@@ -127,7 +127,7 @@ public class PropertyMapping extends ModelElement {
                 // handle adder, if source is collection then use iterator element type as source type.
                 // sourceRef becomes a local variable in the itereation.
                 sourceType = sourceType.getTypeParameters().get( 0 );
-                sourceRefStr = Executables.getElementNameForAdder( targetAccessor );
+                sourceRefStr = Executables.getElementNameForAdder( targetAccessor, ctx.getAccessorNamingStrategy() );
             }
             else {
                 sourceRefStr = getSourceRef();
@@ -240,7 +240,8 @@ public class PropertyMapping extends ModelElement {
                 result = new SetterCollectionOrMapWrapper(
                     result,
                     targetAccessor.getSimpleName().toString(),
-                    newCollectionOrMap
+                    newCollectionOrMap,
+                    ctx.getAccessorNamingStrategy()
                 );
             }
             else {
@@ -341,10 +342,10 @@ public class PropertyMapping extends ModelElement {
         }
 
         private TargetAccessorType getTargetAcccessorType() {
-            if ( Executables.isSetterMethod( targetAccessor ) ) {
+            if ( Executables.isSetterMethod( targetAccessor, ctx.getAccessorNamingStrategy() ) ) {
                 return TargetAccessorType.SETTER;
             }
-            else if ( Executables.isAdderMethod( targetAccessor ) ) {
+            else if ( Executables.isAdderMethod( targetAccessor, ctx.getAccessorNamingStrategy() ) ) {
                 return TargetAccessorType.ADDER;
             }
             else {
@@ -452,14 +453,14 @@ public class PropertyMapping extends ModelElement {
 
             // target
             Type targetType;
-            if ( Executables.isSetterMethod( targetAccessor ) ) {
+            if ( Executables.isSetterMethod( targetAccessor, ctx.getAccessorNamingStrategy() ) ) {
                 targetType = ctx.getTypeFactory().getSingleParameter( targetAccessor ).getType();
             }
             else {
                 targetType = ctx.getTypeFactory().getReturnType( targetAccessor );
             }
 
-            String targetPropertyName = Executables.getPropertyName( targetAccessor );
+            String targetPropertyName = Executables.getPropertyName( targetAccessor, ctx.getAccessorNamingStrategy() );
 
             Assignment assignment = ctx.getMappingResolver().getTargetAssignment(
                 method,
@@ -478,7 +479,7 @@ public class PropertyMapping extends ModelElement {
                 assignment = new SetterWrapper( assignment, method.getThrownTypes() );
 
                 // wrap when dealing with getter only on target
-                if ( Executables.isGetterMethod( targetAccessor ) ) {
+                if ( Executables.isGetterMethod( targetAccessor, ctx.getAccessorNamingStrategy() ) ) {
                     assignment = new GetterCollectionOrMapWrapper( assignment );
                 }
             }
@@ -533,7 +534,7 @@ public class PropertyMapping extends ModelElement {
             assignment = new SetterWrapper( assignment, method.getThrownTypes() );
 
             Type targetType;
-            if ( Executables.isSetterMethod( targetAccessor ) ) {
+            if ( Executables.isSetterMethod( targetAccessor, ctx.getAccessorNamingStrategy() ) ) {
                 targetType = ctx.getTypeFactory().getSingleParameter( targetAccessor ).getType();
             }
             else {

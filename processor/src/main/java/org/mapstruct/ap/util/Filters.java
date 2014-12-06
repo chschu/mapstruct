@@ -24,6 +24,8 @@ import java.util.List;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 
+import org.mapstruct.spi.AccessorNamingStrategy;
+
 /**
  * Filter methods for working with {@link Element} collections.
  *
@@ -34,11 +36,12 @@ public class Filters {
     private Filters() {
     }
 
-    public static List<ExecutableElement> getterMethodsIn(Iterable<ExecutableElement> elements) {
+    public static List<ExecutableElement> getterMethodsIn(Iterable<ExecutableElement> elements,
+                                                          AccessorNamingStrategy accessorNamingStrategy) {
         List<ExecutableElement> getterMethods = new LinkedList<ExecutableElement>();
 
         for ( ExecutableElement method : elements ) {
-            if ( Executables.isGetterMethod( method ) ) {
+            if ( Executables.isGetterMethod( method, accessorNamingStrategy ) ) {
                 getterMethods.add( method );
             }
         }
@@ -46,22 +49,24 @@ public class Filters {
         return getterMethods;
     }
 
-    public static List<ExecutableElement> setterMethodsIn(Iterable<ExecutableElement> elements) {
+    public static List<ExecutableElement> setterMethodsIn(Iterable<ExecutableElement> elements,
+                                                          AccessorNamingStrategy accessorNamingStrategy) {
         List<ExecutableElement> setterMethods = new LinkedList<ExecutableElement>();
 
         for ( ExecutableElement method : elements ) {
-            if ( Executables.isSetterMethod( method ) ) {
+            if ( Executables.isSetterMethod( method, accessorNamingStrategy ) ) {
                 setterMethods.add( method );
             }
         }
         return setterMethods;
     }
 
-    public static List<ExecutableElement> adderMethodsIn(Iterable<ExecutableElement> elements) {
+    public static List<ExecutableElement> adderMethodsIn(Iterable<ExecutableElement> elements,
+                                                         AccessorNamingStrategy accessorNamingStrategy) {
         List<ExecutableElement> adderMethods = new LinkedList<ExecutableElement>();
 
         for ( ExecutableElement method : elements ) {
-            if ( Executables.isAdderMethod( method ) ) {
+            if ( Executables.isAdderMethod( method, accessorNamingStrategy ) ) {
                 adderMethods.add( method );
             }
         }

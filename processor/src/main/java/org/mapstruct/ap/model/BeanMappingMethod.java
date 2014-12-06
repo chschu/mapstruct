@@ -116,13 +116,14 @@ public class BeanMappingMethod extends MappingMethod {
 
             // collect all candidate target accessors
             List<ExecutableElement> candidates = new ArrayList<ExecutableElement>();
-            candidates.addAll( method.getResultType().getSetters() );
-            candidates.addAll( method.getResultType().getAlternativeTargetAccessors() );
+            candidates.addAll( method.getResultType().getSetters( ctx.getAccessorNamingStrategy() ) );
+            candidates.addAll(
+                method.getResultType().getAlternativeTargetAccessors( ctx.getAccessorNamingStrategy() ) );
 
             Map<String, ExecutableElement> targetProperties = new HashMap<String, ExecutableElement>();
 
             for ( ExecutableElement candidate : candidates ) {
-                String targetPropertyName = Executables.getPropertyName( candidate );
+                String targetPropertyName = Executables.getPropertyName( candidate, ctx.getAccessorNamingStrategy() );
 
                 // A target access is in general a setter method on the target object. However, in case of collections,
                 // the current target accessor can also be a getter method.
@@ -132,18 +133,26 @@ public class BeanMappingMethod extends MappingMethod {
 
                     // first check if there's a setter method.
                     ExecutableElement adderMethod = null;
-                    if ( Executables.isSetterMethod( candidate ) ) {
+                    if ( Executables.isSetterMethod( candidate, ctx.getAccessorNamingStrategy() ) ) {
                         Type targetType = ctx.getTypeFactory().getSingleParameter( candidate ).getType();
                         // ok, the current accessor is a setter. So now the strategy determines what to use
                         if ( cmStrategy == CollectionMappingStrategyPrism.ADDER_PREFERRED ) {
-                            adderMethod = method.getResultType().getAdderForType( targetType, targetPropertyName );
+                            adderMethod =
+                                method.getResultType().getAdderForType(
+                                    targetType,
+                                    targetPropertyName,
+                                    ctx.getAccessorNamingStrategy() );
                         }
                     }
-                    else if ( Executables.isGetterMethod( candidate ) ) {
+                    else if ( Executables.isGetterMethod( candidate, ctx.getAccessorNamingStrategy() ) ) {
                         // the current accessor is a getter (no setter available). But still, an add method is according
                         // to the above strategy (SETTER_PREFERRED || ADDER_PREFERRED) preferred over the getter.
                         Type targetType = ctx.getTypeFactory().getReturnType( candidate );
-                        adderMethod = method.getResultType().getAdderForType( targetType, targetPropertyName );
+                        adderMethod =
+                            method.getResultType().getAdderForType(
+                                targetType,
+                                targetPropertyName,
+                                ctx.getAccessorNamingStrategy() );
                     }
                     if ( adderMethod != null ) {
                         // an adder has been found (according strategy) so overrule current choice.
@@ -298,8 +307,10 @@ public class BeanMappingMethod extends MappingMethod {
                             continue;
                         }
 
-                        for ( ExecutableElement sourceAccessor : sourceParameter.getType().getGetters() ) {
-                            String sourcePropertyName = Executables.getPropertyName( sourceAccessor );
+                        for ( ExecutableElement sourceAccessor : sourceParameter.getType().getGetters(
+                            ctx.getAccessorNamingStrategy() ) ) {
+                            String sourcePropertyName =
+                                Executables.getPropertyName( sourceAccessor, ctx.getAccessorNamingStrategy() );
 
                             if ( sourcePropertyName.equals( targetProperty.getKey() ) ) {
                                 candidates.add( sourceAccessor );

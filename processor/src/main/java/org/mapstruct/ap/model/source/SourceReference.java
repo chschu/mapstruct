@@ -31,6 +31,7 @@ import org.mapstruct.ap.model.common.Type;
 import org.mapstruct.ap.model.common.TypeFactory;
 import org.mapstruct.ap.util.Executables;
 import org.mapstruct.ap.util.Strings;
+import org.mapstruct.spi.AccessorNamingStrategy;
 
 /**
  * This class describes the source side of a property mapping.
@@ -69,6 +70,7 @@ public class SourceReference {
         private SourceMethod method;
         private Messager messager;
         private TypeFactory typeFactory;
+        private AccessorNamingStrategy accessorNamingStrategy;
 
         public BuilderFromMapping messager(Messager messager) {
             this.messager = messager;
@@ -87,6 +89,11 @@ public class SourceReference {
 
         public BuilderFromMapping typeFactory(TypeFactory typeFactory) {
             this.typeFactory = typeFactory;
+            return this;
+        }
+
+        public BuilderFromMapping accessorNamingStrategy(AccessorNamingStrategy accessorNamingStrategy) {
+            this.accessorNamingStrategy = accessorNamingStrategy;
             return this;
         }
 
@@ -120,7 +127,7 @@ public class SourceReference {
                 }
                 if ( segments.length > 1 && parameter != null ) {
                     sourcePropertyNames = Arrays.copyOfRange( segments, 1, segments.length );
-                    entries = getSourceEntries( parameter.getType(), sourcePropertyNames );
+                    entries = getSourceEntries( parameter.getType(), sourcePropertyNames, accessorNamingStrategy );
                     foundEntryMatch = ( entries.size() == sourcePropertyNames.length );
                 }
                 else {
@@ -134,14 +141,14 @@ public class SourceReference {
                 // parameter name is not mandatory for single source parameter
                 sourcePropertyNames = segments;
                 parameter = method.getSourceParameters().get( 0 );
-                entries = getSourceEntries( parameter.getType(), sourcePropertyNames );
+                entries = getSourceEntries( parameter.getType(), sourcePropertyNames, accessorNamingStrategy );
                 foundEntryMatch = ( entries.size() == sourcePropertyNames.length );
 
                 if ( !foundEntryMatch ) {
                     //Lets see if the expression contains the parameterName, so parameterName.propName1.propName2
                     if ( parameter.getName().equals( segments[0] ) ) {
                         sourcePropertyNames = Arrays.copyOfRange( segments, 1, segments.length );
-                        entries = getSourceEntries( parameter.getType(), sourcePropertyNames );
+                        entries = getSourceEntries( parameter.getType(), sourcePropertyNames, accessorNamingStrategy );
                         foundEntryMatch = ( entries.size() == sourcePropertyNames.length );
                     }
                     else {
@@ -172,14 +179,15 @@ public class SourceReference {
             return new SourceReference( parameter, entries, isValid );
         }
 
-        private List<PropertyEntry> getSourceEntries(Type type, String[] entryNames) {
+        private List<PropertyEntry> getSourceEntries(Type type, String[] entryNames,
+                                                     AccessorNamingStrategy accessorNamingStrategy) {
             List<PropertyEntry> sourceEntries = new ArrayList<PropertyEntry>();
             Type newType = type;
             for ( String entryName : entryNames ) {
                 boolean matchFound = false;
-                List<ExecutableElement> getters = newType.getGetters();
+                List<ExecutableElement> getters = newType.getGetters( accessorNamingStrategy );
                 for ( ExecutableElement getter : getters ) {
-                    if ( Executables.getPropertyName( getter ).equals( entryName ) ) {
+                    if ( Executables.getPropertyName( getter, accessorNamingStrategy ).equals( entryName ) ) {
                         newType = typeFactory.getType( getter.getReturnType() );
                         sourceEntries.add( new PropertyEntry( entryName, getter, newType ) );
                         matchFound = true;
